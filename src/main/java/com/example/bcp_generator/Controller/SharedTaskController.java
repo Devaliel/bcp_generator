@@ -1,5 +1,9 @@
 package com.example.bcp_generator.Controller;
 
+import com.example.bcp_generator.DTO.AddSharedTaskRequest;
+import com.example.bcp_generator.DTO.CreateSharedTaskDTO;
+import com.example.bcp_generator.Model.MonthlyTaskModel;
+import com.example.bcp_generator.Service.MonthlyTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,22 +22,28 @@ public class SharedTaskController {
 
     private final SharedTaskService sharedTaskService;
     private final UserRepository userRepository;
+    private final MonthlyTaskService monthlyTaskService;
+
+
 
     @Autowired
-    public SharedTaskController(SharedTaskService sharedTaskService, UserRepository userRepository) {
+    public SharedTaskController(SharedTaskService sharedTaskService,
+                                UserRepository userRepository,
+                                MonthlyTaskService monthlyTaskService) {
         this.sharedTaskService = sharedTaskService;
         this.userRepository = userRepository;
+        this.monthlyTaskService = monthlyTaskService ;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<SharedTaskModel> createTask(@RequestBody SharedTaskModel task, @RequestParam Long userId) {
+    public ResponseEntity<SharedTaskModel> createTask(@RequestBody CreateSharedTaskDTO taskDTO, @RequestParam Long userId) {
         Optional<UserModel> userOptional = userRepository.findById(userId);
 
         if (userOptional.isPresent()) {
             UserModel user = userOptional.get();
 
-            // Add the task for the user by passing both the task and user
-            SharedTaskModel createdTask = sharedTaskService.addTask(task, user);
+            // Add the task for the user by passing the DTO and user
+            SharedTaskModel createdTask = sharedTaskService.addTask(taskDTO, user);
 
             // Return the created task in the response
             return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
@@ -42,6 +52,7 @@ public class SharedTaskController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
 
 
 
@@ -59,5 +70,19 @@ public class SharedTaskController {
     }
 
 
-    // Add other controller methods for managing shared tasks (e.g., updating tasks, deleting tasks)
+    @PostMapping("/{monthlyTaskId}/add-shared-task")
+    public ResponseEntity<MonthlyTaskModel> addSharedTaskToMonthlyTask(
+            @PathVariable Long monthlyTaskId,
+            @RequestParam Long sharedTaskId
+    ) {
+        MonthlyTaskModel updatedMonthlyTask = sharedTaskService.addSharedTaskToMonthlyTask(monthlyTaskId, sharedTaskId);
+
+        if (updatedMonthlyTask != null) {
+            return new ResponseEntity<>(updatedMonthlyTask, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+
 }
